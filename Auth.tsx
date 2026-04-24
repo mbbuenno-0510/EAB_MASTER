@@ -10,7 +10,7 @@ interface AuthProps {
   onLoginSuccess: () => void;
 }
 
-type AuthView = 'LOGIN' | 'PROFILE_SELECT' | 'REGISTER' | 'VERIFY_EMAIL';
+type AuthView = 'LOGIN' | 'PROFILE_SELECT' | 'REGISTER' | 'VERIFY_EMAIL' | 'RECOVERY';
 
 // Paleta de Cores Pastel
 const pastel = {
@@ -253,6 +253,31 @@ const Auth: React.FC<AuthProps> = ({ onLoginSuccess }) => {
       }
   };
 
+  const handlePasswordRecovery = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) {
+      setError("Por favor, digite seu e-mail para recuperar a senha.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      await auth.sendPasswordResetEmail(email.trim());
+      setSuccessMessage("E-mail de recuperação enviado! Verifique sua caixa de entrada.");
+      setView('LOGIN');
+    } catch (err: any) {
+      console.error(err);
+      let msg = "Erro ao enviar e-mail de recuperação.";
+      if (err.code === 'auth/user-not-found') msg = "Usuário não encontrado.";
+      if (err.code === 'auth/invalid-email') msg = "E-mail inválido.";
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -471,6 +496,50 @@ const Auth: React.FC<AuthProps> = ({ onLoginSuccess }) => {
             </div>
         )}
 
+        {/* PASSWORD RECOVERY VIEW */}
+        {view === 'RECOVERY' && (
+          <div className="space-y-6 animate-in slide-in-from-right-4 duration-300 w-full">
+            <div className="bg-yellow-50 p-6 rounded-2xl border-2 border-yellow-200 text-center">
+              <RefreshCw className="w-16 h-16 mx-auto text-yellow-500 mb-4 animate-spin-slow" />
+              <h3 className="font-bold text-slate-800 text-xl mb-2">Recuperar Senha</h3>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Digite seu e-mail abaixo e enviaremos um link para você criar uma nova senha.
+              </p>
+            </div>
+
+            <form onSubmit={handlePasswordRecovery} className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold mb-1 text-slate-800">E-mail</label>
+                <input 
+                  type="email" 
+                  value={email} 
+                  onChange={(e) => setEmail(e.target.value)} 
+                  placeholder="email@exemplo.com" 
+                  className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-4 focus:ring-opacity-70 text-slate-900 placeholder-slate-500 shadow-lg" 
+                  style={{ borderColor: pastel.yellow }} 
+                />
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={loading} 
+                className="w-full text-white font-extrabold py-3.5 rounded-xl shadow-2xl hover:shadow-3xl mt-4 flex items-center justify-center transition-all duration-300 transform hover:scale-[1.02]" 
+                style={{ backgroundColor: pastel.yellow, boxShadow: `0 10px 15px -3px ${pastel.yellow}80` }}
+              >
+                {loading ? <Loader2 className="animate-spin w-6 h-6" /> : "ENVIAR E-MAIL DE RECUPERAÇÃO"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setView('LOGIN'); setError(null); setSuccessMessage(null); }}
+                className="w-full text-sm font-bold text-slate-500 hover:text-slate-700 transition-colors flex items-center justify-center gap-1"
+              >
+                <ArrowLeft size={16} /> Voltar para Login
+              </button>
+            </form>
+          </div>
+        )}
+
         {/* REGISTER OR LOGIN FORM */}
         {(view === 'LOGIN' || view === 'REGISTER') && (
           <form onSubmit={handleAuth} className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
@@ -528,6 +597,15 @@ const Auth: React.FC<AuthProps> = ({ onLoginSuccess }) => {
               <>
                 <div><label className="block text-sm font-bold mb-1 text-slate-800">E-mail ou Usuário</label><input type="text" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemplo.com ou usuario" className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:border-blue-700 focus:ring-4 focus:ring-blue-300 focus:ring-opacity-70 text-slate-900 placeholder-slate-500 shadow-lg" style={{ borderColor: pastel.blue }} /></div>
                 <div><label className="block text-sm font-bold mb-1 text-slate-800">Senha</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••" className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:border-blue-700 focus:ring-4 focus:ring-blue-300 focus:ring-opacity-70 text-slate-900 placeholder-slate-500 font-mono text-lg shadow-lg" style={{ borderColor: pastel.blue }} /></div>
+                <div className="flex justify-end">
+                  <button 
+                    type="button" 
+                    onClick={() => { setView('RECOVERY'); setError(null); setSuccessMessage(null); }}
+                    className="text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors"
+                  >
+                    ESQUECEU A SENHA?
+                  </button>
+                </div>
               </>
             )}
 

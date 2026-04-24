@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Wind, Music, Sparkles, BookOpen, Play, Square, Volume2, ArrowLeft, Waves, VolumeX, Volume1, Loader2, Gamepad2, Palette, Dog, PenTool, BrainCircuit, Cloud, TreePine, Droplets, MessageCircle, BookOpenCheck, Grid, RefreshCw } from 'lucide-react';
+import { Wind, Music, Sparkles, BookOpen, Play, Square, Volume2, ArrowLeft, Waves, VolumeX, Volume1, Loader2, Gamepad2, Palette, Dog, PenTool, BrainCircuit, Cloud, TreePine, Droplets, MessageCircle, BookOpenCheck, Grid, RefreshCw, Mic, MicOff, X, Trash2 } from 'lucide-react';
 import { GoogleGenAI, Modality } from "@google/genai";
 import { ChildExtendedProfile } from '../types';
 import CalmPiano from './CalmPiano';
@@ -106,7 +106,13 @@ const ANIMALS_DATA = [
     { name: 'Pássaro', icon: '🐦', audioUrl: 'https://www.google.com/logos/fnbx/animal_sounds/robin.mp3', color: 'bg-sky-100 text-sky-800' },
     { name: 'Leão', icon: '🦁', audioUrl: 'https://www.google.com/logos/fnbx/animal_sounds/lion.mp3', color: 'bg-yellow-100 text-yellow-800' },
     { name: 'Elefante', icon: '🐘', audioUrl: 'https://www.google.com/logos/fnbx/animal_sounds/elephant.mp3', color: 'bg-slate-100 text-slate-800' },
-    { name: 'Vaca', icon: '🐮', audioUrl: 'https://www.google.com/logos/fnbx/animal_sounds/cow.mp3', color: 'bg-stone-100 text-stone-800' }
+    { name: 'Vaca', icon: '🐮', audioUrl: 'https://www.google.com/logos/fnbx/animal_sounds/cow.mp3', color: 'bg-stone-100 text-stone-800' },
+    { name: 'Cavalo', icon: '🐎', audioUrl: 'https://www.google.com/logos/fnbx/animal_sounds/horse.mp3', color: 'bg-amber-50 text-amber-900' },
+    { name: 'Ovelha', icon: '🐑', audioUrl: 'https://www.google.com/logos/fnbx/animal_sounds/sheep.mp3', color: 'bg-gray-100 text-gray-800' },
+    { name: 'Porco', icon: '🐷', audioUrl: 'https://www.google.com/logos/fnbx/animal_sounds/pig.mp3', color: 'bg-pink-100 text-pink-800' },
+    { name: 'Pato', icon: '🦆', audioUrl: 'https://www.google.com/logos/fnbx/animal_sounds/duck.mp3', color: 'bg-yellow-50 text-yellow-700' },
+    { name: 'Macaco', icon: '🐒', audioUrl: 'https://www.google.com/logos/fnbx/animal_sounds/monkey.mp3', color: 'bg-stone-200 text-stone-800' },
+    { name: 'Lobo', icon: '🐺', audioUrl: 'https://www.google.com/logos/fnbx/animal_sounds/wolf.mp3', color: 'bg-slate-200 text-slate-900' }
 ];
 
 // --- UTILITÁRIOS DE ÁUDIO ---
@@ -508,20 +514,22 @@ const AnimalSounds: React.FC<{ volume: number }> = ({ volume }) => {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center h-full gap-4">
-            <h3 className="text-xl font-black text-slate-700 mb-2">Quem faz esse som?</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 w-full">
-                {ANIMALS_DATA.map(animal => (
-                    <button key={animal.name} onClick={() => playSound(animal)} disabled={!!isLoading}
-                        className={`${animal.color} p-6 rounded-3xl flex flex-col items-center justify-center gap-2 hover:scale-105 transition-transform shadow-sm active:scale-95 relative overflow-hidden ${activeAnimal === animal.name ? 'ring-4 ring-blue-400' : ''}`}
-                    >
-                        <span className="text-4xl relative z-10">
-                            {isLoading === animal.name ? <Loader2 className="animate-spin" /> : animal.icon}
-                        </span>
-                        <span className="text-xs font-bold text-slate-700 relative z-10">{animal.name}</span>
-                        {activeAnimal === animal.name && <div className="absolute inset-0 bg-white/30 animate-pulse z-0" />}
-                    </button>
-                ))}
+        <div className="flex flex-col items-center h-full gap-4 max-h-[85vh]">
+            <h3 className="text-xl font-black text-slate-700 mb-2 shrink-0">Quem faz esse som?</h3>
+            <div className="flex-1 overflow-y-auto w-full px-2 py-1 scrollbar-thin scrollbar-thumb-slate-200">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 w-full pb-4">
+                    {ANIMALS_DATA.map(animal => (
+                        <button key={animal.name} onClick={() => playSound(animal)} disabled={!!isLoading}
+                            className={`${animal.color} p-6 rounded-3xl flex flex-col items-center justify-center gap-2 hover:scale-105 transition-transform shadow-sm active:scale-95 relative overflow-hidden ${activeAnimal === animal.name ? 'ring-4 ring-blue-400' : ''}`}
+                        >
+                            <span className="text-4xl relative z-10">
+                                {isLoading === animal.name ? <Loader2 className="animate-spin" /> : animal.icon}
+                            </span>
+                            <span className="text-xs font-bold text-slate-700 relative z-10">{animal.name}</span>
+                            {activeAnimal === animal.name && <div className="absolute inset-0 bg-white/30 animate-pulse z-0" />}
+                        </button>
+                    ))}
+                </div>
             </div>
         </div>
     );
@@ -702,18 +710,43 @@ const SoundMachine = () => {
 };
 
 const FidgetBubble = () => {
+    const bubbleGradients = [
+        'from-blue-300 to-blue-500 border-blue-200',
+        'from-emerald-300 to-emerald-500 border-emerald-200',
+        'from-purple-300 to-purple-500 border-purple-200',
+        'from-pink-300 to-pink-500 border-pink-200',
+        'from-amber-300 to-amber-500 border-amber-200',
+        'from-rose-300 to-rose-500 border-rose-200'
+    ];
+    
     const [bubbles, setBubbles] = useState(Array(12).fill(false)); 
+    const [colorIdx, setColorIdx] = useState(0);
+
     const pop = (i: number) => { 
         soundGen.init();
         if (!bubbles[i]) { 
             const n = [...bubbles]; n[i] = true; setBubbles(n); soundGen.playPop(); 
-            if (n.every(b => b)) setTimeout(() => setBubbles(Array(12).fill(false)), 1000); 
+            if (n.every(b => b)) {
+                setTimeout(() => {
+                    setBubbles(Array(12).fill(false));
+                    setColorIdx(prev => (prev + 1) % bubbleGradients.length);
+                }, 800); 
+            }
         } 
     };
+
     return (
         <div className="flex flex-col items-center h-full">
             <h3 className="text-xl font-bold text-slate-700 mb-6">Estoure as Bolhas</h3>
-            <div className="grid grid-cols-3 gap-4">{bubbles.map((p, i) => (<button key={i} onClick={() => pop(i)} className={`w-20 h-20 rounded-full shadow-md transition-all border-4 ${p ? 'bg-slate-200 border-slate-300 scale-90 shadow-inner' : 'bg-gradient-to-br from-blue-300 to-blue-500 border-blue-200 hover:scale-105 active:scale-95'}`} />))}</div>
+            <div className="grid grid-cols-3 gap-4">
+                {bubbles.map((p, i) => (
+                    <button 
+                        key={i} 
+                        onClick={() => pop(i)} 
+                        className={`w-20 h-20 rounded-full shadow-md transition-all border-4 ${p ? 'bg-slate-200 border-slate-300 scale-90 shadow-inner' : `bg-gradient-to-br ${bubbleGradients[colorIdx]} hover:scale-105 active:scale-95`}`} 
+                    />
+                ))}
+            </div>
         </div>
     );
 };
@@ -760,7 +793,7 @@ const SocialStories: React.FC<{ volume: number, childAge: number }> = ({ volume,
 // --- NOVO: PAINEL DE ESCOLHAS (AAC - Comunicação Alternativa) ---
 const ChoiceBoard = () => {
     const [category, setCategory] = useState<keyof typeof CHOICE_BOARD_DATA.items | null>(null);
-    const [sentence, setSentence] = useState<string[]>([]);
+    const [sentence, setSentence] = useState<any[]>([]);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -790,7 +823,7 @@ const ChoiceBoard = () => {
 
     const handleSpeakSentence = () => {
         if (sentence.length === 0) return;
-        const fullText = "Eu quero " + sentence.join(" ");
+        const fullText = "Eu quero " + sentence.map(s => s.label).join(" ");
         speak(fullText);
     };
 
@@ -801,67 +834,107 @@ const ChoiceBoard = () => {
     return (
         <div className="flex flex-col h-full p-2">
             {/* Sentence Strip Container */}
-            <div className="bg-slate-50 rounded-3xl p-3 mb-4 shadow-inner border border-slate-100">
-                <div className="bg-white border-2 border-slate-100 rounded-2xl p-2 flex items-center justify-between shadow-sm min-h-[5rem]">
-                    <div className="flex items-center gap-2 flex-1 overflow-x-auto px-2 scrollbar-hide">
-                        <span className="font-bold text-slate-400 text-xs uppercase whitespace-nowrap mr-1">EU QUERO:</span>
-                        {sentence.length === 0 && <span className="text-slate-300 text-sm italic">Selecione itens...</span>}
-                        {sentence.map((word, i) => (
-                            <button 
-                                key={i} 
-                                onClick={() => removeWord(i)}
-                                className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg font-bold shadow-sm animate-in fade-in zoom-in hover:bg-red-100 hover:text-red-600 transition-colors whitespace-nowrap"
-                            >
-                                {word}
-                            </button>
-                        ))}
+            <div className="bg-slate-50 rounded-3xl p-4 mb-4 shadow-inner border border-slate-100">
+                <div className="bg-white border-2 border-slate-100 rounded-3xl p-3 flex flex-col md:flex-row items-center justify-between shadow-sm min-h-[6rem] gap-4">
+                    <div className="flex items-center gap-3 flex-1 w-full overflow-hidden">
+                        <div className="flex flex-col gap-1 shrink-0">
+                            <span className="font-black text-blue-600 text-[10px] uppercase tracking-tighter bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100 w-fit">EU QUERO</span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 py-1">
+                            {sentence.length === 0 ? (
+                                <span className="text-slate-300 text-sm italic">Selecione os quadros abaixo...</span>
+                            ) : (
+                                sentence.map((item, i) => (
+                                    <span key={i} className="text-slate-800 font-extrabold text-base md:text-lg animate-in fade-in slide-in-from-left-2 transition-all">
+                                        {item.label}
+                                    </span>
+                                ))
+                            )}
+                        </div>
                     </div>
-                    <div className="flex gap-2 pl-2 border-l border-slate-100 shrink-0">
-                        <button onClick={() => setSentence([])} className="p-3 text-slate-400 hover:text-red-500 transition-colors" title="Limpar"><VolumeX className="w-5 h-5"/></button>
+                    
+                    <div className="flex items-center gap-3 shrink-0 w-full md:w-auto justify-end border-t md:border-t-0 md:border-l border-slate-100 pt-3 md:pt-0 md:pl-4">
+                        <button 
+                            onClick={() => setSentence([])} 
+                            disabled={sentence.length === 0}
+                            className={`p-2.5 rounded-2xl transition-all ${sentence.length === 0 ? 'text-slate-200' : 'text-slate-400 hover:text-red-500 hover:bg-red-50'}`} 
+                            title="Limpar tudo"
+                        >
+                            <Trash2 className="w-5 h-5"/>
+                        </button>
                         <button 
                             onClick={handleSpeakSentence} 
                             disabled={sentence.length === 0 || isLoading || isPlaying}
-                            className={`p-3 rounded-full shadow-lg transition-all transform active:scale-95 ${isLoading || isPlaying ? 'bg-slate-300' : 'bg-green-500 hover:bg-green-600 text-white'}`}
+                            className={`p-4 rounded-[1.5rem] shadow-lg transition-all transform active:scale-95 flex items-center justify-center ${isLoading || isPlaying ? 'bg-slate-300' : 'bg-green-500 hover:bg-green-600 text-white ring-2 ring-green-100'}`}
                         >
-                            {isLoading ? <Loader2 className="animate-spin w-6 h-6"/> : isPlaying ? <Volume2 className="w-6 h-6 animate-pulse"/> : <Play className="w-6 h-6 fill-current"/>}
+                            {isLoading ? <Loader2 className="animate-spin w-6 h-6"/> : isPlaying ? <Volume2 className="w-6 h-6 animate-pulse"/> : <Play className="w-6 h-6 fill-current translate-x-0.5"/>}
                         </button>
                     </div>
                 </div>
-                <p className="text-center text-[10px] text-blue-400 mt-2 font-medium">
-                    Toque no item acima para remover da frase
+
+                <p className="text-center text-[10px] text-blue-400 mt-4 font-black uppercase tracking-widest opacity-80">
+                    Toque no quadro abaixo para remover da sua frase
                 </p>
+
+                {/* Visual Preview Grid for selected items */}
+                {sentence.length > 0 && (
+                    <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 bg-white/60 rounded-[2rem] p-4 border border-slate-100 shadow-sm animate-in fade-in slide-in-from-top-4">
+                        {sentence.map((item, i) => (
+                            <button 
+                                key={i} 
+                                onClick={() => removeWord(i)}
+                                className="flex flex-col items-center justify-center bg-white rounded-2xl p-2 shadow-sm border-2 border-blue-50 relative group animate-in zoom-in h-20 w-full hover:border-red-300 hover:bg-red-50 transition-all hover:scale-105 active:scale-95"
+                            >
+                                <span className="text-4xl group-hover:scale-90 transition-transform">{item.icon}</span>
+                                <span className="text-[9px] font-black text-slate-700 truncate w-full text-center mt-1 border-t border-slate-50 pt-1 uppercase">{item.label}</span>
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Categories or Items */}
             {!category ? (
-                <div className="grid grid-cols-2 gap-3 overflow-y-auto content-start flex-1 pb-20">
+                <div className="grid grid-cols-2 gap-3 overflow-y-auto content-start flex-1 pb-20 px-1">
                     {CHOICE_BOARD_DATA.categories.map(cat => (
-                        <button key={cat.id} onClick={() => setCategory(cat.id as any)} className={`${cat.color} border-b-[6px] p-4 rounded-3xl flex flex-col items-center justify-center gap-2 transition-transform hover:scale-[1.02] active:scale-95 h-36 shadow-sm`}>
-                            <span className="text-5xl drop-shadow-sm mb-1">{cat.icon}</span>
+                        <button key={cat.id} onClick={() => setCategory(cat.id as any)} className={`${cat.color} border-b-[6px] p-4 rounded-[2rem] flex flex-col items-center justify-center gap-2 transition-transform hover:scale-[1.02] active:scale-95 h-40 shadow-sm border-2 border-transparent hover:border-white/50`}>
+                            <span className="text-6xl drop-shadow-sm mb-1">{cat.icon}</span>
                             <span className="font-black text-slate-700 text-lg">{cat.label}</span>
                         </button>
                     ))}
                 </div>
             ) : (
                 <div className="flex flex-col h-full">
-                    <button onClick={() => setCategory(null)} className="mb-3 self-start flex items-center gap-2 text-slate-500 font-bold bg-slate-100 px-4 py-2 rounded-xl hover:bg-slate-200 transition-colors"><ArrowLeft className="w-4 h-4"/> Voltar para Categorias</button>
-                    <div className="grid grid-cols-3 gap-3 overflow-y-auto content-start flex-1 pb-20">
-                        {CHOICE_BOARD_DATA.items[category].map((item: any, i: number) => (
-                            <button 
-                                key={i} 
-                                onClick={() => setSentence([...sentence, item.label])}
-                                className="bg-white border-2 border-slate-100 border-b-[4px] p-2 rounded-2xl flex flex-col items-center justify-center gap-1 hover:border-blue-300 active:scale-95 h-28 shadow-sm transition-all"
-                            >
-                                <span className="text-4xl mb-1">{item.icon}</span>
-                                <span className="font-bold text-xs text-slate-700 text-center leading-tight">{item.label}</span>
-                            </button>
-                        ))}
+                    <div className="flex items-center justify-between mb-4 px-1">
+                        <button onClick={() => setCategory(null)} className="flex items-center gap-2 text-slate-500 font-black text-xs bg-slate-100 px-4 py-2.5 rounded-2xl hover:bg-slate-200 transition-colors shadow-sm"><ArrowLeft className="w-4 h-4"/> CATEGORIAS</button>
+                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">{category}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3 overflow-y-auto content-start flex-1 pb-20 px-1">
+                        {CHOICE_BOARD_DATA.items[category]
+                            .filter((item: any) => !sentence.some(s => s.label === item.label))
+                            .map((item: any, i: number) => (
+                                <button 
+                                    key={i} 
+                                    onClick={() => setSentence([...sentence, item])}
+                                    className="bg-white border-2 border-slate-100 border-b-[4px] p-2 rounded-3xl flex flex-col items-center justify-center gap-1 hover:border-blue-400 hover:bg-blue-50 active:scale-95 h-32 shadow-sm transition-all group"
+                                >
+                                    <span className="text-5xl mb-1 group-hover:scale-110 transition-transform">{item.icon}</span>
+                                    <span className="font-black text-[10px] text-slate-700 text-center leading-tight uppercase">{item.label}</span>
+                                </button>
+                            ))}
+                        {/* Empty state if all items selected */}
+                        {CHOICE_BOARD_DATA.items[category].every((item: any) => sentence.some(s => s.label === item.label)) && (
+                            <div className="col-span-3 py-12 text-center text-slate-400 italic text-sm">
+                                Todos os itens destas categoria já estão na sua frase.
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
         </div>
     );
 };
+
 
 // --- NOVO: GERADOR DE HISTÓRIAS SOCIAIS (Customizadas) ---
 const SocialStoriesGenerator = () => {
@@ -965,10 +1038,14 @@ const SocialStoriesGenerator = () => {
 const InteractiveReading = () => {
     const [word, setWord] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isListening, setIsListening] = useState(false);
     const [result, setResult] = useState<{text: string, emoji: string} | null>(null);
+    const recognitionRef = useRef<any>(null);
 
-    const handleRead = async () => {
-        if (!word.trim()) return;
+    const handleRead = async (textToRead?: string) => {
+        const targetWord = textToRead || word;
+        if (!targetWord.trim()) return;
+        
         const ctx = soundGen.init(); 
         if (!ctx) return;
         setIsLoading(true);
@@ -978,7 +1055,7 @@ const InteractiveReading = () => {
             // 1. Gerar Explicação Simples
             const textResponse = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
-                contents: [{ parts: [{ text: `Explique a palavra "${word}" para uma criança pequena de forma mágica, divertida e curta (máx 2 frases). Retorne um JSON: { "text": "explicação", "emoji": "emoji_relacionado" }` }] }],
+                contents: [{ parts: [{ text: `Explique a palavra "${targetWord}" para uma criança pequena de forma mágica, divertida e curta (máx 2 frases). Retorne um JSON: { "text": "explicação", "emoji": "emoji_relacionado" }` }] }],
                 config: { responseMimeType: 'application/json' }
             });
             const data = JSON.parse(textResponse.text || '{}');
@@ -987,7 +1064,7 @@ const InteractiveReading = () => {
             // 2. Ler
             const audioResponse = await ai.models.generateContent({
                 model: "gemini-3.1-flash-tts-preview",
-                contents: [{ parts: [{ text: `A palavra mágica é ${word}! ${data.text}` }] }],
+                contents: [{ parts: [{ text: `A palavra mágica é ${targetWord}! ${data.text}` }] }],
                 config: { responseModalities: [Modality.AUDIO], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Puck' } } } }
             });
             const base64 = audioResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
@@ -1001,6 +1078,41 @@ const InteractiveReading = () => {
         } catch (e) { console.error(e); } finally { setIsLoading(false); }
     };
 
+    const toggleListening = () => {
+        if (isListening) {
+            recognitionRef.current?.stop();
+            setIsListening(false);
+            return;
+        }
+
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert("Seu navegador não suporta reconhecimento de voz.");
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'pt-BR';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = () => setIsListening(true);
+        recognition.onend = () => setIsListening(false);
+        recognition.onerror = (event: any) => {
+            console.error("Speech recognition error", event.error);
+            setIsListening(false);
+        };
+        recognition.onresult = (event: any) => {
+            const transcript = event.results[0][0].transcript;
+            const cleanWord = transcript.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim();
+            setWord(cleanWord);
+            handleRead(cleanWord);
+        };
+
+        recognitionRef.current = recognition;
+        recognition.start();
+    };
+
     return (
         <div className="flex flex-col items-center justify-center h-full p-6">
             <div className="w-full max-w-sm">
@@ -1011,14 +1123,21 @@ const InteractiveReading = () => {
                         type="text" 
                         value={word} 
                         onChange={e => setWord(e.target.value)} 
-                        placeholder="Digite uma palavra..." 
-                        className="w-full p-4 rounded-2xl border-4 border-indigo-200 text-center text-xl font-bold text-slate-700 focus:border-indigo-400 outline-none placeholder:text-slate-300"
+                        placeholder={isListening ? "Ouvindo..." : "Digite uma palavra..."} 
+                        className={`w-full p-4 pr-14 rounded-2xl border-4 ${isListening ? 'border-red-400 animate-pulse' : 'border-indigo-200'} text-center text-xl font-bold text-slate-700 focus:border-indigo-400 outline-none placeholder:text-slate-300 transition-all`}
                     />
+                    <button 
+                        onClick={toggleListening}
+                        className={`absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-xl transition-all ${isListening ? 'bg-red-100 text-red-600' : 'bg-indigo-50 text-indigo-600'}`}
+                        title={isListening ? "Parar de ouvir" : "Falar palavra"}
+                    >
+                        {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+                    </button>
                 </div>
 
                 <button 
-                    onClick={handleRead} 
-                    disabled={isLoading || !word}
+                    onClick={() => handleRead()} 
+                    disabled={isLoading || !word || isListening}
                     className="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-black py-4 rounded-2xl shadow-lg transition-transform active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                     {isLoading ? <Loader2 className="animate-spin"/> : "Ler Palavra Mágica ✨"}

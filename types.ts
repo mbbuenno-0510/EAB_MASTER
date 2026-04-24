@@ -101,6 +101,9 @@ export interface ChildExtendedProfile {
   notifyGuardianOnCalmRoomEnter?: boolean; 
   showSchoolHistoryToGuardian?: boolean; // Novo: Permite o pai ver o histórico escolar na aba Diário
   
+  // Controle de Documentos
+  shareMedicalDocsWithHealth?: boolean; 
+  
   // Controle de Profissionais de Saúde (Global - Pai define quem entra)
   isVisibleToHealth?: boolean; 
   allowedHealthProfessionals?: HealthAccessRule[]; 
@@ -248,6 +251,9 @@ export interface StoredDocument {
   storagePath?: string; 
   uploadedAt: number | Date | FirestoreTimestamp; 
   uploaderId?: string;
+  sharedWithHealth?: boolean; // Novo: Controle individual de compartilhamento com profissionais de saúde
+  documentDate?: string; // YYYY-MM-DD
+  expiryDate?: string; // YYYY-MM-DD
 }
 
 

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { UserProfile, StoredDocument, ProfileType, ChildExtendedProfile, HealthAccessRule, SchoolAccessRule } from '../types';
 import { db, storage } from '../services/firebase';
-import { FileText, Trash2, Eye, UploadCloud, User, Loader2, Save, Plus, ShieldCheck, GraduationCap, X, Edit2, Ban, AlertTriangle, FolderOpen, ArrowLeft, Users, ChevronDown, BellRing, Baby, Wind, Music, BookOpen, Gamepad2, Settings2, Sparkles, Palette, Dog, PenTool, BrainCircuit, MessageCircle, BookOpenCheck, Network, RefreshCw } from 'lucide-react';
+import { FileText, Trash2, Eye, UploadCloud, User, Loader2, Save, Plus, ShieldCheck, GraduationCap, X, Edit2, Ban, AlertTriangle, FolderOpen, ArrowLeft, Users, ChevronDown, BellRing, Baby, Wind, Music, BookOpen, Gamepad2, Settings2, Sparkles, Palette, Dog, PenTool, BrainCircuit, MessageCircle, BookOpenCheck, Network, RefreshCw, Stethoscope, Briefcase } from 'lucide-react';
 import { Card, Button, Input, TextArea, Modal } from './ui';
 import UploadModal from './UploadModal';
 import DocumentViewModal from './DocumentViewModal';
@@ -296,6 +296,8 @@ const DocsView: React.FC<DocsViewProps> = ({ userProfile, preSelectedStudentId }
     const [isUploadModalOpen, setUploadModalOpen] = useState(false);
     const [isViewModalOpen, setViewModalOpen] = useState(false);
     const [selectedDoc, setSelectedDoc] = useState<StoredDocument | null>(null);
+    const [docToEdit, setDocToEdit] = useState<StoredDocument | null>(null);
+    const [filterFolder, setFilterFolder] = useState<'all' | 'personal' | 'medical'>('all');
     const [childProfile, setChildProfile] = useState<Partial<ChildExtendedProfile>>({});
     const [isSavingProfile, setIsSavingProfile] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -355,10 +357,30 @@ const DocsView: React.FC<DocsViewProps> = ({ userProfile, preSelectedStudentId }
     }, [targetUid]);
 
     const filteredDocuments = useMemo(() => {
-        if (isSchool) return documents.filter(doc => doc.uploaderId === userProfile?.uid);
-        if (isHealth) return documents.filter(doc => doc.category === 'Médicos' || doc.category === 'Medical' || doc.uploaderId === userProfile?.uid);
-        return documents;
-    }, [documents, isSchool, isHealth, userProfile?.uid]);
+        let baseDocs = documents;
+        
+        if (isSchool) {
+            baseDocs = documents.filter(doc => doc.uploaderId === userProfile?.uid);
+        } else if (isHealth) {
+            baseDocs = documents.filter(doc => {
+                const isMyUpload = doc.uploaderId === userProfile?.uid;
+                const isMedicalShared = (doc.category === 'Médicos' || doc.category === 'Medical') && doc.sharedWithHealth;
+                return isMyUpload || isMedicalShared;
+            });
+        } else if (isChild) {
+            // Criança só vê documentos pessoais
+            baseDocs = documents.filter(doc => doc.category === 'Documentos Pessoais');
+        }
+
+        if (filterFolder === 'personal') {
+            return baseDocs.filter(doc => doc.category === 'Documentos Pessoais');
+        }
+        if (filterFolder === 'medical') {
+            return baseDocs.filter(doc => doc.category === 'Médicos' || doc.category === 'Medical');
+        }
+        
+        return baseDocs;
+    }, [documents, isSchool, isHealth, isChild, userProfile?.uid, childProfile.shareMedicalDocsWithHealth, filterFolder]);
 
     const fetchProfileData = async () => {
         if (!targetUid) return;
@@ -473,10 +495,37 @@ const DocsView: React.FC<DocsViewProps> = ({ userProfile, preSelectedStudentId }
                 <div className="space-y-6">
                     {targetUid ? (
                         <>
-                            <div className="flex justify-between items-center">
-                                <h2 className="text-xl font-bold text-slate-800">{isSchool ? 'Documentos Escolares' : isHealth ? 'Documentos Médicos' : 'Meus Documentos'}</h2>
-                                {canUpload && (<Button onClick={() => setUploadModalOpen(true)}><UploadCloud className="w-4 h-4 mr-2" /> Novo Upload</Button>)}
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                <h2 className="text-xl font-bold text-slate-800">{isSchool ? 'Documentos Escolares' : 'Seus Documentos'}</h2>
+                                <div className="flex gap-2">
+                                    {canUpload && (<Button onClick={() => { setDocToEdit(null); setUploadModalOpen(true); }}><UploadCloud className="w-4 h-4 mr-2" /> Novo Upload</Button>)}
+                                </div>
                             </div>
+
+                            {/* SELETOR DE PASTAS */}
+                            {!isSchool && !isChild && (
+                                <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+                                    <button 
+                                        onClick={() => setFilterFolder('all')}
+                                        className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm border ${filterFolder === 'all' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200'}`}
+                                    >
+                                        Todos
+                                    </button>
+                                    <button 
+                                        onClick={() => setFilterFolder('personal')}
+                                        className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm border flex items-center gap-2 ${filterFolder === 'personal' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200'}`}
+                                    >
+                                        <Briefcase className="w-3 h-3" /> Pessoais
+                                    </button>
+                                    <button 
+                                        onClick={() => setFilterFolder('medical')}
+                                        className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm border flex items-center gap-2 ${filterFolder === 'medical' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200'}`}
+                                    >
+                                        <Stethoscope className="w-3 h-3" /> Médicos
+                                    </button>
+                                </div>
+                            )}
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {filteredDocuments.length === 0 ? (
                                     <div className="col-span-1 md:col-span-2 text-center py-12 bg-white rounded-xl border border-dashed border-slate-300 text-slate-400"><FileText className="w-12 h-12 mx-auto mb-2 opacity-50" /><p>Nenhum documento disponível.</p></div>
@@ -485,10 +534,54 @@ const DocsView: React.FC<DocsViewProps> = ({ userProfile, preSelectedStudentId }
                                         <Card key={doc.id} className="p-4 flex items-center justify-between hover:shadow-md transition-shadow border-slate-200 cursor-pointer relative" onClick={() => { setSelectedDoc(doc); setViewModalOpen(true); }}>
                                             <div className="flex items-center gap-3 overflow-hidden">
                                                 <div className={`p-2.5 rounded-lg shrink-0 ${doc.mimeType.includes('pdf') ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}><FileText className="w-5 h-5" /></div>
-                                                <div className="min-w-0"><h3 className="font-bold text-slate-800 truncate text-sm">{doc.title}</h3><p className="text-xs text-slate-500">{doc.category} • {new Date(typeof doc.uploadedAt === 'number' ? doc.uploadedAt : (doc.uploadedAt as any).seconds * 1000).toLocaleDateString()}</p></div>
+                                                <div className="min-w-0">
+                                                    <h3 className="font-bold text-slate-800 truncate text-sm">{doc.title}</h3>
+                                                    <p className="text-xs text-slate-500">{doc.category} • {new Date(typeof doc.uploadedAt === 'number' ? doc.uploadedAt : (doc.uploadedAt as any).seconds * 1000).toLocaleDateString()}</p>
+                                                    
+                                                    {(doc.documentDate || doc.expiryDate) && (
+                                                        <div className="flex gap-2 mt-1">
+                                                            {doc.documentDate && <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200">Doc: {new Date(doc.documentDate + 'T00:00:00').toLocaleDateString()}</span>}
+                                                            {doc.expiryDate && <span className={`text-[10px] px-1.5 py-0.5 rounded border ${new Date(doc.expiryDate) < new Date() ? 'bg-red-50 text-red-600 border-red-200' : 'bg-amber-50 text-amber-600 border-amber-200'}`}>Exp: {new Date(doc.expiryDate + 'T00:00:00').toLocaleDateString()}</span>}
+                                                        </div>
+                                                    )}
+
+                                                    {/* INDICADOR DE COMPARTILHAMENTO (APENAS DOCS MÉDICOS PARA PAIS) */}
+                                                    {isGuardian && (doc.category === 'Médicos' || doc.category === 'Medical') && (
+                                                        <div className="mt-2 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                                <div className="relative">
+                                                                    <input 
+                                                                        type="checkbox" 
+                                                                        className="sr-only peer" 
+                                                                        checked={doc.sharedWithHealth || false} 
+                                                                        onChange={async (e) => {
+                                                                            const val = e.target.checked;
+                                                                            if (targetUid) {
+                                                                                await db.collection('users').doc(targetUid).collection('documents').doc(doc.id).update({ sharedWithHealth: val });
+                                                                            }
+                                                                        }}
+                                                                    />
+                                                                    <div className="w-7 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-teal-600"></div>
+                                                                </div>
+                                                                <span className={`text-[10px] font-bold uppercase transition-colors ${doc.sharedWithHealth ? 'text-teal-600' : 'text-slate-400'}`}>
+                                                                    {doc.sharedWithHealth ? 'Compartilhado' : 'Privado'}
+                                                                </span>
+                                                            </label>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                             <div className="flex gap-2 shrink-0 z-10">
-                                                <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Eye className="w-4 h-4" /></button>
+                                                <button onClick={(e) => { e.stopPropagation(); setSelectedDoc(doc); setViewModalOpen(true); }} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Eye className="w-4 h-4" /></button>
+                                                {canUpload && (
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); setDocToEdit(doc); setUploadModalOpen(true); }}
+                                                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                                        title="Editar"
+                                                    >
+                                                        <Edit2 className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                                 {canDelete && (
                                                     <button 
                                                         onClick={(e) => { e.stopPropagation(); setDocToDelete(doc); setIsDeleteModalOpen(true); }}
@@ -823,7 +916,11 @@ const DocsView: React.FC<DocsViewProps> = ({ userProfile, preSelectedStudentId }
                 </div>
             )}
 
-            <UploadModal isOpen={isUploadModalOpen} onClose={() => setUploadModalOpen(false)} onUpload={async (title, category, file) => {
+            <UploadModal 
+                isOpen={isUploadModalOpen} 
+                onClose={() => { setUploadModalOpen(false); setDocToEdit(null); }} 
+                initialData={docToEdit}
+                onUpload={async (title, category, file, sharedWithHealth, documentDate, expiryDate, isEditing) => {
                 if (!targetUid) return;
                 
                 // Helper to convert to Base64
@@ -836,39 +933,65 @@ const DocsView: React.FC<DocsViewProps> = ({ userProfile, preSelectedStudentId }
 
                 try {
                     const timestamp = Date.now();
-                    let downloadUrl = '';
-                    let storagePath = '';
-                    let dataUrl = '';
+                    let downloadUrl = isEditing ? (docToEdit?.downloadUrl || '') : '';
+                    let storagePath = isEditing ? (docToEdit?.storagePath || '') : '';
+                    let dataUrl = isEditing ? (docToEdit?.dataUrl || '') : '';
 
-                    // Strategy: Use Base64 for small files (< 700KB) to ensure it works without Storage
-                    // Use Storage for larger files.
-                    if (file.size < 700 * 1024) {
-                         dataUrl = await toBase64(file);
-                    } else {
-                         // Fallback to Storage
-                         storagePath = `documents/${targetUid}/${timestamp}_${file.name}`;
-                         const snapshot = await storage.ref(storagePath).put(file);
-                         downloadUrl = await snapshot.ref.getDownloadURL();
+                    // Only process new file if provided
+                    if (file) {
+                        // Strategy: Use Base64 for small files (< 700KB) to ensure it works without Storage
+                        // Use Storage for larger files.
+                        if (file.size < 700 * 1024) {
+                             dataUrl = await toBase64(file);
+                             downloadUrl = '';
+                             storagePath = '';
+                        } else {
+                             // Fallback to Storage
+                             storagePath = `documents/${targetUid}/${timestamp}_${file.name}`;
+                             const snapshot = await storage.ref(storagePath).put(file);
+                             downloadUrl = await snapshot.ref.getDownloadURL();
+                             dataUrl = '';
+                        }
+
+                        // Deleta arquivo antigo se houver novo e for edição
+                        if (isEditing && docToEdit?.storagePath && docToEdit.storagePath !== storagePath) {
+                            await storage.ref(docToEdit.storagePath).delete().catch(e => console.warn("Old file delete failed:", e));
+                        }
                     }
 
-                    await db.collection('users').doc(targetUid).collection('documents').add({
+                    const docData = {
                         userId: targetUid,
                         title,
                         category,
-                        mimeType: file.type,
-                        filename: file.name,
-                        downloadUrl: downloadUrl || null,
-                        dataUrl: dataUrl || null, // Store Base64 if available
-                        storagePath: storagePath || null,
-                        uploadedAt: Date.now(),
-                        uploaderId: userProfile?.uid
-                    });
+                        sharedWithHealth: !!sharedWithHealth,
+                        documentDate: documentDate || null,
+                        expiryDate: expiryDate || null,
+                        ...(file ? {
+                            mimeType: file.type,
+                            filename: file.name,
+                            downloadUrl: downloadUrl || null,
+                            dataUrl: dataUrl || null,
+                            storagePath: storagePath || null
+                        } : {})
+                    };
+
+                    if (isEditing && docToEdit) {
+                        await db.collection('users').doc(targetUid).collection('documents').doc(docToEdit.id).update(docData);
+                    } else {
+                        await db.collection('users').doc(targetUid).collection('documents').add({
+                            ...docData,
+                            mimeType: file?.type || '',
+                            filename: file?.name || '',
+                            uploadedAt: Date.now(),
+                            uploaderId: userProfile?.uid
+                        });
+                    }
                     
-                    // Modal closing is handled by the modal itself upon promise resolution
+                    setDocToEdit(null);
                 } catch (error: any) {
-                    console.error("Upload failed", error);
+                    console.error("Upload/Update failed", error);
                     alert(`Erro ao salvar documento: ${error.message}`);
-                    throw error; // Re-throw to keep modal open
+                    throw error; 
                 }
             }} />
             <DocumentViewModal isOpen={isViewModalOpen} onClose={() => setViewModalOpen(false)} document={selectedDoc} />
