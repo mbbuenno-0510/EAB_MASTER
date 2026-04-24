@@ -5,13 +5,33 @@ import 'firebase/compat/auth';
 import 'firebase/compat/storage';
 import firebaseConfig from '../firebase-applet-config.json';
 
+// Use environment variables if available, otherwise fall back to the config file
+const finalConfig = {
+  apiKey: process.env.VITE_FIREBASE_API_KEY || firebaseConfig.apiKey,
+  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseConfig.authDomain,
+  projectId: process.env.VITE_FIREBASE_PROJECT_ID || firebaseConfig.projectId,
+  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseConfig.storageBucket,
+  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseConfig.messagingSenderId,
+  appId: process.env.VITE_FIREBASE_APP_ID || firebaseConfig.appId,
+  firestoreDatabaseId: process.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || (firebaseConfig as any).firestoreDatabaseId
+};
+
 // Initialize Firebase
 if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
+    firebase.initializeApp(finalConfig);
 }
 
 // Initialize services
-export const db = firebase.firestore();
+let firestore: any;
+try {
+  // @ts-ignore - Support for named databases in compat layer
+  firestore = firebase.app().firestore(finalConfig.firestoreDatabaseId);
+} catch (e) {
+  console.error("Error initializing Firestore with specific DB ID, falling back to default:", e);
+  firestore = firebase.firestore();
+}
+
+export const db = firestore;
 export const auth = firebase.auth();
 export const storage = firebase.storage();
 export const firebaseCon = db;

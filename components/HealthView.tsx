@@ -5,7 +5,7 @@ import { Appointment, Therapy, Medication, DOSAGE_UNITS, UserProfile, ProfileTyp
 import { Card, Button, Input, Select, Modal, TextArea } from './ui'; 
 import { db, storage } from '../services/firebase';
 // Importação de ícones
-import { Trash2, Edit2, Plus, Clock, Calendar, Check, Paperclip, X, Pill, Stethoscope, Box, Puzzle, Loader2, AlertTriangle, School, GraduationCap, Info } from 'lucide-react'; 
+import { Trash2, Edit2, Plus, Clock, Calendar, Check, Paperclip, X, Pill, Stethoscope, Box, Puzzle, Loader2, AlertTriangle, School, GraduationCap, Info, FileText } from 'lucide-react'; 
 
 // Importação do componente real DocumentViewModal
 import DocumentViewModal from './DocumentViewModal'; 
@@ -145,6 +145,26 @@ const MedicationForm: React.FC<MedicationFormProps> = ({ initialMed, targetUid, 
     const [selectedDays, setSelectedDays] = useState<number[]>(initialMed?.selectedDays || []);
     const [newTime, setNewTime] = useState<string>('');
     const [isSaving, setIsSaving] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+    const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+    const [attachmentPreview, setAttachmentPreview] = useState<string | null>(initialMed?.downloadUrl || null);
+    const [removeExistingAttachment, setRemoveExistingAttachment] = useState(false);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setAttachmentFile(file);
+            setRemoveExistingAttachment(false);
+            // Preview if it's an image
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => setAttachmentPreview(e.target?.result as string);
+                reader.readAsDataURL(file);
+            } else {
+                setAttachmentPreview(null);
+            }
+        }
+    };
 
     const handleAddTime = () => {
         if (newTime && !administrationTimes.includes(newTime)) {
@@ -179,10 +199,68 @@ const MedicationForm: React.FC<MedicationFormProps> = ({ initialMed, targetUid, 
             }
 
             setIsSaving(true);
-
+            setUploadProgress(0);
             try {
-                const medData: Partial<Medication> = {
+                const docRef = initialMed?.id 
+                    ? db.collection('users').doc(targetUid).collection('medications').doc(initialMed.id)
+                    : db.collection('users').doc(targetUid).collection('medications').doc();
+
+                let uploadData: Partial<Medication> = {};
+
+                if (attachmentFile) {
+                    const fileExt = attachmentFile.name.split('.').pop();
+                    const fileName = `prescription_${Date.now()}.${fileExt}`;
+                    const filePath = `users/${targetUid}/medications/${docRef.id}/${fileName}`;
+                    const fileRef = storage.ref().child(filePath);
+                    
+                    // Removendo anexo anterior se existir
+                    if (initialMed?.storagePath) {
+                        try {
+                            await storage.ref().child(initialMed.storagePath).delete();
+                        } catch (e) {
+                            console.warn("Erro ao deletar anexo antigo:", e);
+                        }
+                    }
+
+                    const uploadTask = fileRef.put(attachmentFile);
+                    
+                    // Monitorar progresso (opcional, mas bom para UX)
+                    uploadTask.on('state_changed', 
+                        (snapshot) => {
+                            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                            setUploadProgress(progress);
+                        }
+                    );
+
+                    await uploadTask;
+                    const downloadUrl = await fileRef.getDownloadURL();
+                    
+                    uploadData = {
+                        downloadUrl: downloadUrl,
+                        storagePath: filePath,
+                        attachmentFilename: attachmentFile.name,
+                        attachmentMimeType: attachmentFile.type,
+                    };
+                } else if (removeExistingAttachment) {
+                    if (initialMed?.storagePath) {
+                        try {
+                            await storage.ref().child(initialMed.storagePath).delete();
+                        } catch (e) {
+                            console.warn("Erro ao deletar anexo:", e);
+                        }
+                    }
+                    uploadData = {
+                        downloadUrl: null,
+                        storagePath: null,
+                        attachmentFilename: null,
+                        attachmentMimeType: null,
+                    };
+                }
+
+                const medData: any = {
                     ...newMed,
+                    ...uploadData,
+                    id: docRef.id,
                     stock: initialMed?.stock || 0,
                     minStock: initialMed?.minStock || 5,
                     packageSize: initialMed?.packageSize || 0,
@@ -204,9 +282,9 @@ const MedicationForm: React.FC<MedicationFormProps> = ({ initialMed, targetUid, 
                 };
 
                 if (initialMed?.id) {
-                    await db.collection('users').doc(targetUid).collection('medications').doc(initialMed.id).update(medData);
+                    await docRef.update(medData);
                 } else {
-                    await db.collection('users').doc(targetUid).collection('medications').add(medData);
+                    await docRef.set(medData);
                 }
                 
                 onClose();
@@ -246,6 +324,56 @@ const MedicationForm: React.FC<MedicationFormProps> = ({ initialMed, targetUid, 
                             ))}
                         </Select>
                     </div>
+                </div>
+
+                {/* --- SEÇÃO DE ANEXO (RECEITA) --- */}
+                <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-100/50 space-y-2">
+                    <label className="block text-xs font-bold text-blue-700 uppercase mb-1 ml-1 flex items-center gap-1">
+                        <Paperclip className="w-3 h-3" /> Anexo / Receita Médica
+                    </label>
+                    
+                    <div className="flex items-center gap-3">
+                        <label className="flex-1 cursor-pointer">
+                            <div className="flex items-center justify-center gap-2 py-2 px-4 bg-white border-2 border-dashed border-blue-200 rounded-lg text-blue-600 hover:bg-blue-50 transition-all">
+                                <Plus className="w-4 h-4" />
+                                <span className="text-xs font-bold">{attachmentFile ? 'Alterar Anexo' : 'Adicionar Receita / Foto'}</span>
+                                <input type="file" className="hidden" onChange={handleFileChange} accept="image/*,application/pdf" />
+                            </div>
+                        </label>
+                        
+                {(attachmentFile || (attachmentPreview && !removeExistingAttachment)) && (
+                            <div className="flex items-center gap-2 bg-white p-1 rounded-lg border border-blue-100 shadow-sm pr-2">
+                                {attachmentPreview ? (
+                                    <img src={attachmentPreview} alt="Preview" className="w-10 h-10 object-cover rounded shadow-inner" />
+                                ) : (
+                                    <div className="w-10 h-10 bg-blue-100 flex items-center justify-center rounded">
+                                        <FileText className="w-5 h-5 text-blue-500" />
+                                    </div>
+                                )}
+                                <div className="max-w-[100px]">
+                                    <p className="text-[10px] font-bold text-slate-700 truncate">{attachmentFile?.name || initialMed?.attachmentFilename || 'Anexo'}</p>
+                                    <p className="text-[8px] text-slate-400">{attachmentFile ? 'Novo arquivo' : 'Arquivo salvo'}</p>
+                                </div>
+                                <button 
+                                    type="button"
+                                    onClick={() => { 
+                                        setAttachmentFile(null); 
+                                        setAttachmentPreview(null);
+                                        if (!attachmentFile) setRemoveExistingAttachment(true);
+                                    }}
+                                    className="p-1 text-slate-300 hover:text-red-500"
+                                    title="Remover anexo"
+                                >
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                    {uploadProgress !== null && uploadProgress < 100 && isSaving && (
+                        <div className="w-full bg-blue-100 rounded-full h-1.5 mt-2">
+                            <div className="bg-blue-600 h-1.5 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex gap-2">
@@ -410,7 +538,7 @@ const MedicationForm: React.FC<MedicationFormProps> = ({ initialMed, targetUid, 
             <div className="sticky -mx-6 p-4 bg-white border-t border-slate-100 flex gap-3 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]" style={{ bottom: '2rem', marginBottom: '2rem' }}>
                 <Button variant="secondary" onClick={onClose} className="flex-1 py-3" disabled={isSaving}>Cancelar</Button>
                 <Button onClick={handleSaveMedication} className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white shadow-lg" disabled={isSaving}>
-                    {isSaving ? <><Loader2 className="w-4 h-4 animate-spin mr-2"/> Salvando...</> : (initialMed?.id ? "Salvar Alterações" : "Adicionar Medicamento")}
+                    {isSaving ? <><Loader2 className="w-4 h-4 animate-spin mr-2"/> {uploadProgress !== null && uploadProgress < 100 ? `Transmitindo... ${Math.round(uploadProgress)}%` : 'Finalizando...'}</> : (initialMed?.id ? "Salvar Alterações" : "Adicionar Medicamento")}
                 </Button>
             </div>
         </div>
