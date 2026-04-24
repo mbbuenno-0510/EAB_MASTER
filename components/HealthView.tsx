@@ -592,8 +592,9 @@ const AppointmentModal: React.FC<AppointmentModalProps> = ({ initialAppt, target
                 <Input label="Especialidade/Local" value={newAppt.specialty || ''} onChange={e => setNewAppt({...newAppt, specialty: e.target.value})} />
                 <div className="flex gap-2">
                     <Input label="Data" type="date" value={newAppt.date || ''} onChange={e => setNewAppt({...newAppt, date: e.target.value})} />
-                    <Input label="Hora" type="time" value={newAppt.time || ''} onChange={e => setNewAppt({...newAppt, time: e.target.value})} />
+                    <Input label="Hora da Consulta" type="time" value={newAppt.time || ''} onChange={e => setNewAppt({...newAppt, time: e.target.value})} />
                 </div>
+                <Input label="Hora do Alarme (Opcional)" type="time" value={newAppt.alarmTime || ''} onChange={e => setNewAppt({...newAppt, alarmTime: e.target.value})} />
                 <Input label="Nome do Profissional (Opcional)" value={newAppt.professionalName || ''} onChange={e => setNewAppt({...newAppt, professionalName: e.target.value})} />
                 <div className="flex gap-2">
                     <div className="w-32 flex-shrink-0">
@@ -896,7 +897,14 @@ const HealthView: React.FC<HealthViewProps> = ({ userProfile }) => {
             {/* 1. MEDICAÇÃO */}
             {activeTab === 'meds' && (
                 <div className="space-y-4">
-                    <div className="flex justify-between items-center"><h3 className="text-lg font-bold text-slate-700">Medicamentos</h3><Button onClick={handleOpenNewMedModal} className="bg-teal-600 hover:bg-teal-700"><Plus className="w-4 h-4 mr-2"/> Adicionar</Button></div>
+            <div className="flex justify-between items-center">
+                <h3 className="text-lg font-bold text-slate-700">Medicamentos</h3>
+                <div className="flex gap-2">
+                    <Button onClick={handleOpenNewMedModal} className="bg-teal-600 hover:bg-teal-700">
+                        <Plus className="w-4 h-4 mr-2"/> Adicionar
+                    </Button>
+                </div>
+            </div>
                     {medications.length === 0 ? (
                         <div className="text-center py-10 bg-white rounded-xl border border-dashed border-slate-300 text-slate-400"><Pill className="w-12 h-12 mx-auto mb-2 opacity-50"/><p>Nenhum medicamento cadastrado.</p></div>
                     ) : (

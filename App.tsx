@@ -14,6 +14,7 @@ import SensoryView from './components/SensoryView';
 import ProfessionalView from './components/ProfessionalView'; 
 import SchoolView from './components/SchoolView'; 
 import ErrorBoundary from './components/ErrorBoundary';
+import GlobalAlarmMonitor from './components/GlobalAlarmMonitor';
 
 type ViewState = 
     'dashboard' | 'diary' | 'health' | 'routines' | 'docs' | 'sensory' | 
@@ -235,6 +236,7 @@ const AppContent: React.FC = () => {
     return (
         <div className="h-[100dvh] bg-slate-50 flex md:flex-row flex-col font-sans overflow-hidden">
             <NotificationPopup visible={notification.visible} message={notification.message} onClose={() => setNotification(prev => ({...prev, visible: false}))} />
+            {userProfile && <GlobalAlarmMonitor userProfile={userProfile} />}
             
             <aside className="hidden md:flex w-20 lg:w-64 bg-white border-r border-slate-200 flex-col py-6 z-20 shadow-md transition-all duration-300">
                 <div className="mb-8 px-4 flex items-center justify-center lg:justify-start gap-3"><div className={`w-10 h-10 rounded-xl flex items-center justify-center text-2xl shadow-sm border ${isHealth ? 'bg-teal-50 border-teal-100' : isSchool ? 'bg-purple-50 border-purple-100' : 'bg-gradient-to-br from-blue-100 to-indigo-100'}`}>{isHealth ? '🩺' : isSchool ? '🎓' : '🤖'}</div><span className="text-xl font-black text-slate-800 tracking-tight hidden lg:block">EAB</span></div>

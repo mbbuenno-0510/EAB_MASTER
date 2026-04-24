@@ -201,6 +201,7 @@ export interface Appointment {
   specialty: string;
   date: string; 
   time?: string; 
+  alarmTime?: string; 
   notes?: string;
   
   isRecurrent?: boolean;
