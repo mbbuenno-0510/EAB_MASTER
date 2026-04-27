@@ -16,9 +16,18 @@ interface RobotMascotProps {
   onSpeakerClick?: () => void;
   isSpeaking?: boolean;
   isLoading?: boolean;
+  onInstallClick?: () => void;
+  isInstallable?: boolean;
 }
 
-const RobotMascot: React.FC<RobotMascotProps> = ({ mood, onSpeakerClick, isSpeaking, isLoading }) => {
+const RobotMascot: React.FC<RobotMascotProps> = ({ 
+  mood, 
+  onSpeakerClick, 
+  isSpeaking, 
+  isLoading,
+  onInstallClick,
+  isInstallable
+}) => {
   const getExpression = () => {
     switch (mood) {
       case MoodType.HAPPY:
@@ -83,6 +92,8 @@ const RobotMascot: React.FC<RobotMascotProps> = ({ mood, onSpeakerClick, isSpeak
         @keyframes pulse-loading { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.8); opacity: 0.7; } }
         @keyframes swing-left { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(5deg); } }
         @keyframes swing-right { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-5deg); } }
+        @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .animate-spin-slow { animation: spin-slow 8s linear infinite; transform-origin: 60px 100px; }
       `}</style>
       <svg width="120" height="150" viewBox="0 0 120 150">
         <defs>
@@ -114,14 +125,28 @@ const RobotMascot: React.FC<RobotMascotProps> = ({ mood, onSpeakerClick, isSpeak
           <rect x="10" y="80" width="20" height="45" rx="10" fill="url(#metallicGradient)" className="robot-arm-left"/>
           <rect x="90" y="80" width="20" height="45" rx="10" fill="url(#metallicGradient)" className="robot-arm-right"/>
         </g>
-        <g className="body" onClick={onSpeakerClick} style={{ cursor: onSpeakerClick ? 'pointer' : 'default' }}>
-          {onSpeakerClick && <title>Ouvir explicação</title>}
+        <g className="body" onClick={isInstallable ? onInstallClick : onSpeakerClick} style={{ cursor: (onSpeakerClick || onInstallClick) ? 'pointer' : 'default' }}>
+          {(onSpeakerClick || onInstallClick) && <title>{isInstallable ? "Instalar Aplicativo" : "Ouvir explicação"}</title>}
           <rect x="20" y="70" width="80" height="60" rx="20" fill="url(#metallicGradient)" />
           <rect x="20" y="70" width="80" height="60" rx="20" fill={moodColor} fillOpacity="0.5" style={{ transition: 'fill 0.5s ease-in-out' }} />
-          <circle cx="60" cy="100" r="15" fill="#F9FAFB" stroke="#E5E7EB" strokeWidth="2" />
-          <circle cx="60" cy="100" r="8" fill="#10B981" className={`robot-speaker-dot ${isSpeaking ? 'speaking' : ''} ${isLoading ? 'loading' : ''}`} />
-          {!isSpeaking && !isLoading && onSpeakerClick && (
-            <path d="M58 96 L 65 100 L 58 104 Z" fill="white" style={{ pointerEvents: 'none' }} />
+          
+          <circle cx="60" cy="100" r="22" fill="white" fillOpacity="0.3" stroke="white" strokeWidth="1" strokeDasharray="2 2" className={isInstallable ? "animate-spin-slow" : ""} />
+          <circle cx="60" cy="100" r="18" fill="#F9FAFB" stroke="#E5E7EB" strokeWidth="2" className="transition-all group-hover:scale-110" />
+          
+          {isInstallable ? (
+            <g transform="translate(52, 92) scale(0.65)" stroke="#4F46E5" fill="none" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+               <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+               <path d="M12 18h.01" />
+               <path d="M12 12l0 3" />
+               <path d="M10 14l2 2 2-2" />
+            </g>
+          ) : (
+            <>
+              <circle cx="60" cy="100" r="8" fill="#10B981" className={`robot-speaker-dot ${isSpeaking ? 'speaking' : ''} ${isLoading ? 'loading' : ''}`} />
+              {!isSpeaking && !isLoading && onSpeakerClick && (
+                <path d="M58 96 L 65 100 L 58 104 Z" fill="white" style={{ pointerEvents: 'none' }} />
+              )}
+            </>
           )}
         </g>
         <g className="legs">

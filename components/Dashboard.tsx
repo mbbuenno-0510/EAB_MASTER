@@ -14,7 +14,9 @@ import { Card, Button } from './ui';
 // Hooks e Tipos
 import { auth } from '../services/firebase'; 
 import { useDashboardData } from '../hooks/useDashboardData';
+import { usePWAInstall } from '../hooks/usePWAInstall';
 import { UserProfile, ProfileType } from '../types';
+import { Smartphone } from 'lucide-react';
 
 interface DashboardProps {
     currentUser: User | null;
@@ -34,6 +36,8 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, userProfile, onChang
         upcomingTherapies, 
         lastDiaryEntry 
     } = useDashboardData(userProfile);
+
+    const { isInstallable, isStandalone, installPWA } = usePWAInstall();
 
     // Seleciona o próximo compromisso para o card de destaque
     const nextAppointment = upcomingTherapies.length > 0 ? upcomingTherapies[0] : null;
@@ -63,16 +67,18 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, userProfile, onChang
                 {/* Welcome Card (Ocupa o espaço principal) */}
                 <WelcomeCard userProfile={userProfile} currentUser={currentUser} />
                 
-                {/* BOTÃO SAIR NO TOPO */}
-                <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={handleLogout}
-                    className="flex items-center text-sm text-slate-500 hover:text-red-500 ml-4 p-2 mt-1"
-                >
-                    <LogOut className="w-4 h-6 mr-1" />
-                    Sair
-                </Button>
+                <div className="flex flex-col items-end gap-2 ml-4">
+                    {/* BOTÃO SAIR NO TOPO */}
+                    <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={handleLogout}
+                        className="flex items-center text-sm text-slate-500 hover:text-red-500 p-2"
+                    >
+                        <LogOut className="w-4 h-4 mr-1" />
+                        Sair
+                    </Button>
+                </div>
             </div>
 
             {/* 2. SUMÁRIO DOS DADOS */}

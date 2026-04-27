@@ -2,9 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import firebase, { auth, db } from './services/firebase';
 import { ProfileType, MoodType } from './types';
-import { Loader2, ArrowLeft, User, ShieldCheck, CheckCircle2, Stethoscope, GraduationCap, Mail, RefreshCw, Send, LogIn, FileText } from 'lucide-react';
+import { Loader2, ArrowLeft, User, ShieldCheck, CheckCircle2, Stethoscope, GraduationCap, Mail, RefreshCw, Send, LogIn, FileText, Smartphone } from 'lucide-react';
 import RobotMascot from './components/RobotMascot';
 import LandingPage from './components/LandingPage';
+import { usePWAInstall } from './hooks/usePWAInstall';
 
 interface AuthProps {
   onLoginSuccess: () => void;
@@ -52,6 +53,7 @@ const Auth: React.FC<AuthProps> = ({ onLoginSuccess }) => {
   const [childPassword, setChildPassword] = useState('');
 
   const [selectedProfile, setSelectedProfile] = useState<ProfileType | null>(null);
+  const { isInstallable, isStandalone, installPWA } = usePWAInstall();
   
   // Estado para armazenar credenciais temporárias durante a verificação
   const [pendingCreds, setPendingCreds] = useState<{email: string, password: string} | null>(null);
@@ -410,7 +412,11 @@ const Auth: React.FC<AuthProps> = ({ onLoginSuccess }) => {
       >
         <div className="flex flex-col items-center mb-6">
           <div className="transform scale-75 mb-[-10px]">
-            <RobotMascot mood={MoodType.HAPPY} />
+            <RobotMascot 
+              mood={MoodType.HAPPY} 
+              isInstallable={isInstallable && !isStandalone}
+              onInstallClick={installPWA}
+            />
           </div>
           <h1 className="text-3xl font-black tracking-wide mb-1 text-slate-900" style={{ color: pastel.blue }}>EAB</h1>
           <p className="text-slate-800 font-medium text-center text-sm">
